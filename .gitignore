@@ -1,0 +1,9 @@
+baseline/__pycache__
+baseline/wandb
+baseline/dataset/__pycache__
+baseline/loss/__pycache__
+baseline/study/__pycache__
+code
+data
+output/*
+pretrain/*
