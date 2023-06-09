@@ -90,12 +90,13 @@ def GetSegFormer(class_len):
     model = SegFormer(29)
     return model
 
-class MMSegFormer():
+class MMSegFormer(nn.Module):
     def __init__(self) -> None:
+        super().__init__()
         cfg=Config.fromfile('/opt/ml/level2_cv_semanticsegmentation-cv-01/baseline/mmconfig/segformer.py')
         checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/segformer/segformer_mit-b5_512x512_160k_ade20k/segformer_mit-b5_512x512_160k_ade20k_20210726_145235-94cedf59.pth'
         self.model = init_model(cfg,checkpoint)
-        self.upsample = nn.Upsample(scale_factor=2)
+        self.upsample = nn.Upsample(scale_factor=4)
     def forward(self,input):
         output = self.model(input)
         output = self.upsample(output)
