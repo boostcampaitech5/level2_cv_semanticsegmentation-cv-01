@@ -43,18 +43,18 @@ def main(args, k=1):
             dataset=train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=2,
+            num_workers=4,
             drop_last=False,
         )
         valid_loader = DataLoader(
             dataset=valid_dataset,
-            batch_size=1,
+            batch_size=2,
             shuffle=False,
-            num_workers=1,
+            num_workers=2,
             drop_last=False,
         )
 
-        model = UNet(len(args.classes))
+        model = MMSegFormer()
 
         # Loss function 정의
         criterion = nn.BCEWithLogitsLoss()
@@ -63,7 +63,7 @@ def main(args, k=1):
         optimizer = optim.AdamW(
             params=model.parameters(), lr=args.lr, weight_decay=args.weight_decay
         )
-        train(model, args, train_loader, valid_loader, criterion, optimizer, i, accum_step=8)
+        train(model, args, train_loader, valid_loader, criterion, optimizer, i, accum_step=2)
 
 
 def parse_args():
@@ -122,12 +122,12 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="UNet",
+        default="CustomSegformer",
     )
     parser.add_argument("--num_epoch", type=int, default=80)
-    parser.add_argument("--resize", type=int, default=2048)
-    parser.add_argument("--batch_size", type=int, default=2)
-    parser.add_argument("--lr", type=float, default=10e-4)
+    parser.add_argument("--resize", type=int, default=512)
+    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--val_every", type=int, default=1)
 
