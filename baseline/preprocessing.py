@@ -7,7 +7,7 @@ import cv2
 import json
 import torch
 from torchvision import transforms
-
+from tqdm import tqdm
 def get_inner_files(path, extension):
     files = {
         os.path.relpath(os.path.join(root, fname), start=path)
@@ -67,13 +67,13 @@ classes = [ "finger-1","finger-2","finger-3","finger-4","finger-5","finger-6","f
             "finger-9","finger-10","finger-11","finger-12","finger-13","finger-14","finger-15","finger-16","finger-17",
             "finger-18","finger-19","Trapezium","Trapezoid","Capitate","Hamate","Scaphoid","Lunate","Triquetrum","Pisiform","Radius","Ulna"]
 dataset = simpledataset(
-    image_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/data/train/DCM",
-    label_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/data/train/outputs_json",
+    image_path="/opt/ml/data/train/DCM",
+    label_path="/opt/ml/data/train/outputs_json",
     classes=classes,
 )
 
 save_path = '/opt/ml/level2_cv_semanticsegmentation-cv-01/newdataset/train'
-for img,label,img_name in iter(dataset):
+for img,label,img_name in tqdm(iter(dataset)):
 
     path,name = img_name.split('/')
     if not os.path.exists(os.path.join(save_path,path)):
@@ -87,5 +87,5 @@ for img,label,img_name in iter(dataset):
 file_names = dataset.filenames
 for i in range(len(file_names)):
     file_names[i]=file_names[i][:-3]+'npz'
-print(file_names)
+#print(file_names)
 np.save(save_path+'/train.npy',dataset.filenames)

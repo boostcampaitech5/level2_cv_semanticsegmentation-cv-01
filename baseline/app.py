@@ -25,8 +25,9 @@ def main(args, k=1):
                     A.PadIfNeeded(512,512),
                     A.Rotate(10),
                     A.CropNonEmptyMaskIfExists(512,512),
-                    A.GaussNoise(),
-                   A.Normalize(max_pixel_value=1)
+                    A.GaussNoise(var_limit=(0.001,0.005)),
+                    A.CoarseDropout(60,5,5,10),
+                    A.Normalize(max_pixel_value=1)
     ])
     for i in range(k):
         train_dataset = PreProcessDataset(
