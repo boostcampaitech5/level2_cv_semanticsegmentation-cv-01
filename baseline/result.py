@@ -17,7 +17,7 @@ def main(args, k=1):
 
     print(args)
 
-    tf = A.Resize(512, 512)
+    tf = A.Resize(256, 256)
 
     test_dataset = XRayInferenceDataset(
         test_path=args.test_path,
