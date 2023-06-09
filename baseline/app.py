@@ -20,8 +20,14 @@ def main(args, k=1):
 
     wandb.init(project="segmentation", name=args.model_name)
 
-    tf = A.Compose([A.Resize(args.resize, args.resize),
-                   A.Normalize(max_pixel_value=1)
+    tf = A.Compose([A.Resize(512, 512),
+                    A.RandomScale((0.1,0.1)) ,
+                    A.PadIfNeeded(512,512),
+                    A.Rotate(10),
+                    A.CropNonEmptyMaskIfExists(512,512),
+                    A.GaussNoise(var_limit=(0.001,0.005)),
+                    A.CoarseDropout(60,5,5,10),
+                    A.Normalize(max_pixel_value=1)
     ])
     for i in range(k):
         train_dataset = PreProcessDataset(
