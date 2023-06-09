@@ -17,7 +17,7 @@ def main(args, k=1):
 
     print(args)
 
-    tf = A.Resize(512, 512)
+    tf = A.Resize(256, 256)
 
     test_dataset = XRayInferenceDataset(
         test_path=args.test_path,
@@ -32,9 +32,7 @@ def main(args, k=1):
     )
 
     for i in range(k):
-        model = torch.load(
-            os.path.join(args.pretrained_dir, f"fcn_resnet50_best_model{i}.pth")
-        )
+        model = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}{i}.pth"))
         rles, filename_and_class = test(model, args.classes, test_loader)
         classes, filename = zip(*[x.split("_") for x in filename_and_class])
         image_name = [os.path.basename(f) for f in filename]
@@ -45,7 +43,7 @@ def main(args, k=1):
                 "rle": rles,
             }
         )
-        df.to_csv(os.path.join(args.saved_dir, "output{i}.csv"), index=False)
+        df.to_csv(os.path.join(args.saved_dir, f"{args.output}{i}.csv"), index=False)
 
 
 def parse_args():
@@ -100,6 +98,16 @@ def parse_args():
         "--pretrained_dir",
         type=str,
         default="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
+    )
+    parser.add_argument(
+        "--pretrain",
+        type=str,
+        default="fcn_res50_cosAnn_best",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="fcn_res50_cosAnn_best",
     )
 
     args = parser.parse_args()

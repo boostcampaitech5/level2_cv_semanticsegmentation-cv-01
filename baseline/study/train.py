@@ -55,7 +55,9 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
     return avg_dice
 
 
-def train(model, args, data_loader, val_loader, criterion, optimizer, order):
+def train(
+    model, args, data_loader, val_loader, criterion, optimizer, order, scheduler=None
+):
     print(f"Start training..")
 
     best_dice = 0.0
@@ -80,7 +82,8 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order):
             scaler.step(optimizer)
             scaler.update()
 
-            wandb.log({"train/LR": args.lr, "train/loss": loss})
+            current_lr = optimizer.param_groups[0]["lr"]
+            wandb.log({"train/LR": current_lr, "train/loss": loss})
 
             if (step + 1) % 20 == 0:
                 print(
@@ -104,3 +107,5 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order):
                     save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
                     file_name=f"{args.model_name}_best{order}.pth",
                 )
+        if scheduler != None:
+            scheduler.step()

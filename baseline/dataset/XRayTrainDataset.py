@@ -41,11 +41,14 @@ class XRayTrainDataset(Dataset):
         filenames = []
         labelnames = []
         for i, (_, y) in enumerate(gkf.split(_filenames, ys, groups)):
-            if is_train == True and i != val_idx:
+            if is_train:
+                if i == val_idx:
+                    continue
+
                 filenames += list(_filenames[y])
                 labelnames += list(_labelnames[y])
 
-            elif is_train == False and i == val_idx:
+            else:
                 filenames = list(_filenames[y])
                 labelnames = list(_labelnames[y])
                 break

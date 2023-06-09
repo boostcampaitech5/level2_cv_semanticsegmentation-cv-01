@@ -18,8 +18,7 @@ def get_inner_files(path, extension):
 
 class XRayInferenceDataset(Dataset):
     def __init__(self, test_path, transforms=None):
-        _filenames = get_inner_files(path=test_path, extension="png")
-        _filenames = np.array(sorted(_filenames))
+        _filenames = np.array(get_inner_files(path=test_path, extension="png"))
 
         self.filenames = _filenames
         self.transforms = transforms

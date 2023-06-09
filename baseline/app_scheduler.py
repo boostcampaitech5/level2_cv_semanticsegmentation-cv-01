@@ -8,7 +8,9 @@ from argparse import ArgumentParser
 from torch.utils.data import DataLoader
 
 from dataset.XRayTrainDataset import XRayTrainDataset
-from models import fcn_resnet50
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from scheduler.CosinePowerAnnealing import CosinePowerAnnealing
+from models import fcn_resnet50, deeplabv3_resnet50
 from study.train import train
 from utils import set_seed
 
@@ -56,7 +58,7 @@ def main(args, k=1):
             drop_last=False,
         )
 
-        model = fcn_resnet50(len(args.classes))
+        model = deeplabv3_resnet50(len(args.classes))
 
         # Loss function 정의
         criterion = nn.BCEWithLogitsLoss()
@@ -65,7 +67,23 @@ def main(args, k=1):
         optimizer = optim.AdamW(
             params=model.parameters(), lr=args.lr, weight_decay=args.weight_decay
         )
-        train(model, args, train_loader, valid_loader, criterion, optimizer, i)
+        # scheduler = CosinePowerAnnealing(
+        #     optimizer=optimizer,
+        #     epochs=args.num_epoch,
+        #     max_lr=10,
+        #     min_lr=0.5,
+        # )
+        scheduler = CosineAnnealingLR(optimizer, T_max=args.num_epoch, eta_min=1e-4)
+        train(
+            model,
+            args,
+            train_loader,
+            valid_loader,
+            criterion,
+            optimizer,
+            i,
+            scheduler=scheduler,
+        )
 
 
 def parse_args():
@@ -129,7 +147,7 @@ def parse_args():
     parser.add_argument("--num_epoch", type=int, default=80)
     parser.add_argument("--resize", type=int, default=256)
     parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--val_every", type=int, default=1)
 
