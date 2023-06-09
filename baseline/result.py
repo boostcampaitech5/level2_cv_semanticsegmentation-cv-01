@@ -17,7 +17,7 @@ def main(args, k=1):
 
     print(args)
 
-    tf = A.Resize(512, 512)
+    tf = A.Resize(256, 256)
 
     test_dataset = XRayInferenceDataset(
         test_path=args.test_path,
@@ -33,7 +33,7 @@ def main(args, k=1):
 
     for i in range(k):
         model = torch.load(
-            os.path.join(args.pretrained_dir, f"fcn_resnet50_best_model{i}.pth")
+            os.path.join(args.pretrained_dir, f"/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/UNet_last.pth")
         )
         rles, filename_and_class = test(model, args.classes, test_loader)
         classes, filename = zip(*[x.split("_") for x in filename_and_class])

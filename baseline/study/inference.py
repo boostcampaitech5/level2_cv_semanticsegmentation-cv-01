@@ -32,7 +32,7 @@ def test(model, classes, data_loader, thr=0.5):
             enumerate(data_loader), total=len(data_loader)
         ):
             images = images.cuda()
-            outputs = model(images)["out"]
+            outputs = model(images)
 
             # restore original size
             outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")

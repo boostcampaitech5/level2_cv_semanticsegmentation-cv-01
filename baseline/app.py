@@ -21,6 +21,11 @@ def main(args, k=1):
     wandb.init(project="segmentation", name=args.model_name)
 
     tf = A.Compose([A.Resize(args.resize, args.resize),
+                    A.RandomScale((0.1,0.1)) ,
+                    A.PadIfNeeded(512,512),
+                    A.Rotate(10),
+                    A.CropNonEmptyMaskIfExists(512,512),
+                    A.GaussNoise(),
                    A.Normalize(max_pixel_value=1)
     ])
     for i in range(k):
@@ -50,12 +55,12 @@ def main(args, k=1):
             dataset=valid_dataset,
             batch_size=2,
             shuffle=False,
-            num_workers=2,
+            num_workers=1,
             drop_last=False,
         )
 
         model = MMSegFormer()
-
+        
         # Loss function 정의
         criterion = nn.BCEWithLogitsLoss()
 
@@ -63,7 +68,7 @@ def main(args, k=1):
         optimizer = optim.AdamW(
             params=model.parameters(), lr=args.lr, weight_decay=args.weight_decay
         )
-        train(model, args, train_loader, valid_loader, criterion, optimizer, i, accum_step=2)
+        train(model, args, train_loader, valid_loader, criterion, optimizer, i, accum_step=4)
 
 
 def parse_args():
@@ -122,12 +127,12 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="CustomSegformer",
+        default="mmSegformer",
     )
     parser.add_argument("--num_epoch", type=int, default=80)
     parser.add_argument("--resize", type=int, default=512)
-    parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--lr", type=float, default=6e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--val_every", type=int, default=1)
 
