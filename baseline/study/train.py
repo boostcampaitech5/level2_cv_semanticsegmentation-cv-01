@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 from tqdm.auto import tqdm
 from utils import save_model, dice_coef
-
+from time import time
 
 def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
     print(f"Start validation #{epoch:2d}")
@@ -22,7 +22,7 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
 
-            outputs = model(images)["out"]
+            outputs = model(images)
 
             output_h, output_w = outputs.size(-2), outputs.size(-1)
             mask_h, mask_w = masks.size(-2), masks.size(-1)
@@ -55,16 +55,15 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
     return avg_dice
 
 
-def train(model, args, data_loader, val_loader, criterion, optimizer, order):
+def train(model, args, data_loader, val_loader, criterion, optimizer, order,accum_step=1):
     print(f"Start training..")
 
     best_dice = 0.0
 
     scaler = torch.cuda.amp.GradScaler(enabled=True)
-
+    
     for epoch in range(args.num_epoch):
         model.train()
-
         for step, (images, masks) in enumerate(data_loader):
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
@@ -72,13 +71,13 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order):
 
             with torch.cuda.amp.autocast(enabled=True):
                 # inference
-                outputs = model(images)["out"]
+                outputs = model(images)
                 # loss 계산
                 loss = criterion(outputs, masks)
-
             scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            if (step+1)%accum_step == 0 or step+1 == len(data_loader):
+                scaler.step(optimizer)
+                scaler.update()
 
             wandb.log({"train/LR": args.lr, "train/loss": loss})
 
@@ -89,7 +88,6 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order):
                     f"Step [{step+1}/{len(data_loader)}], "
                     f"Loss: {round(loss.item(),4)}"
                 )
-
         if (epoch + 1) % args.val_every == 0:
             dice = validation(epoch + 1, model, args.classes, val_loader, criterion)
 
@@ -104,3 +102,10 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order):
                     save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
                     file_name=f"{args.model_name}_best{order}.pth",
                 )
+            if epoch+1 == args.num_epoch:
+                save_model(
+                    model,
+                    save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
+                    file_name=f"{args.model_name}_last.pth"
+                )
+            
