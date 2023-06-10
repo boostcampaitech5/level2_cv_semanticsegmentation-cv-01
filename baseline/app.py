@@ -69,9 +69,10 @@ def main(args, k=1):
         criterion = nn.BCEWithLogitsLoss()
 
         # Optimizer 정의
-        optimizer = optim.AdamW(
-            params=model.parameters(), lr=args.lr, weight_decay=args.weight_decay
-        )
+        optimizer = optim.AdamW([
+            {'params':model.model.backbone.parameters(), 'lr':args.lr, 'weight_decay':args.weight_decay},
+            {'params':model.model.decode_head.parameters(), 'lr':args.lr*10, 'weight_decay':args.weight_decay},
+        ])
         train(model, args, train_loader, valid_loader, criterion, optimizer, i, accum_step=4)
 
 
