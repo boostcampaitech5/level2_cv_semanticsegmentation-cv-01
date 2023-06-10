@@ -27,7 +27,7 @@ def main(args, k=1):
                     # A.RandomCrop(512,512),
                     # A.GaussNoise(var_limit=(0.001,0.005)),
                     # A.CoarseDropout(60,5,5,10),
-                    A.Normalize(max_pixel_value=1)
+                    A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1)
     ])
     val_tf = A.Compose([A.Resize(args.resize, args.resize),
                     A.Normalize(max_pixel_value=1)
@@ -131,7 +131,7 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b0_no_aug",
+        default="mmSegformer_b0_normalize",
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)
