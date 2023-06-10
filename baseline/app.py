@@ -21,12 +21,15 @@ def main(args, k=1):
     wandb.init(project="segmentation", name=args.model_name)
 
     tf = A.Compose([A.Resize(args.resize, args.resize),
-                    A.RandomScale((0.1,0.1)) ,
-                    A.PadIfNeeded(512,512),
-                    A.Rotate(10),
-                    A.CropNonEmptyMaskIfExists(512,512),
-                    A.GaussNoise(var_limit=(0.001,0.005)),
-                    A.CoarseDropout(60,5,5,10),
+                    # A.RandomScale((0.1,0.1)) ,
+                    # A.PadIfNeeded(512,512),
+                    # A.Rotate(10),
+                    # A.RandomCrop(512,512),
+                    # A.GaussNoise(var_limit=(0.001,0.005)),
+                    # A.CoarseDropout(60,5,5,10),
+                    A.Normalize(max_pixel_value=1)
+    ])
+    val_tf = A.Compose([A.Resize(args.resize, args.resize),
                     A.Normalize(max_pixel_value=1)
     ])
     for i in range(k):
@@ -49,12 +52,12 @@ def main(args, k=1):
             dataset=train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=4,
+            num_workers=1,
             drop_last=False,
         )
         valid_loader = DataLoader(
             dataset=valid_dataset,
-            batch_size=2,
+            batch_size=1,
             shuffle=False,
             num_workers=1,
             drop_last=False,
@@ -128,14 +131,14 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer",
+        default="mmSegformer_b0_no_aug",
     )
-    parser.add_argument("--num_epoch", type=int, default=80)
-    parser.add_argument("--resize", type=int, default=512)
-    parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--num_epoch", type=int, default=120)
+    parser.add_argument("--resize", type=int, default=1024)
+    parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--lr", type=float, default=6e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
-    parser.add_argument("--val_every", type=int, default=1)
+    parser.add_argument("--val_every", type=int, default=5)
 
     args = parser.parse_args()
     return args
