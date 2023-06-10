@@ -49,7 +49,7 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
 
     avg_dice = torch.mean(dices_per_class).item()
     wandb.log(
-        {f"class_accuracy/{k}": v.item() for k, v in zip(classes, dices_per_class)}
+        {f"class_accuracy/{k}": v.item() for k, v in zip(classes, dices_per_class) }.update({'epoch':epoch})
     )
     wandb.log({"train/val_avg_dice": avg_dice})
     return avg_dice

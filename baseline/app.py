@@ -19,7 +19,7 @@ def main(args, k=1):
     print(args)
 
     wandb.init(project="segmentation", name=args.model_name)
-
+    wandb.define_metric('class_accuracy/*',step_metic='epoch')
     tf = A.Compose([A.Resize(args.resize, args.resize),
                     # A.RandomScale((0.1,0.1)) ,
                     # A.PadIfNeeded(512,512),
