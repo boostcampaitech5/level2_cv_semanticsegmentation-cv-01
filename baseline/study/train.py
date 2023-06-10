@@ -7,6 +7,8 @@ from tqdm.auto import tqdm
 from utils import save_model, dice_coef
 from time import time
 
+debug_test = True
+
 def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
     print(f"Start validation #{epoch:2d}")
     model.eval()
@@ -40,6 +42,8 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
 
             dice = dice_coef(outputs, masks)
             dices.append(dice)
+            if debug_test:
+                break
 
     dices = torch.cat(dices, 0)
     dices_per_class = torch.mean(dices, 0)
@@ -88,6 +92,8 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order,accu
                     f"Step [{step+1}/{len(data_loader)}], "
                     f"Loss: {round(loss.item(),4)}"
                 )
+            if debug_test:
+                break
         if (epoch + 1) % args.val_every == 0:
             dice = validation(epoch + 1, model, args.classes, val_loader, criterion)
 

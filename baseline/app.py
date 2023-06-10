@@ -21,12 +21,12 @@ def main(args, k=1):
     wandb.init(project="segmentation", name=args.model_name)
 
     tf = A.Compose([A.Resize(args.resize, args.resize),
-                    # A.RandomScale((0.1,0.1)) ,
-                    # A.PadIfNeeded(512,512),
-                    # A.Rotate(10),
-                    # A.RandomCrop(512,512),
-                    # A.GaussNoise(var_limit=(0.001,0.005)),
-                    # A.CoarseDropout(60,5,5,10),
+                    A.RandomScale((0.1,0.1)) ,
+                    A.PadIfNeeded(512,512),
+                    A.Rotate(10),
+                    A.RandomCrop(512,512),
+                    A.GaussNoise(var_limit=(0,0.005),per_channel=False),
+                    A.CoarseDropout(60,5,5,10),
                     A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1)
     ])
     val_tf = A.Compose([A.Resize(args.resize, args.resize),
@@ -132,7 +132,7 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b0_normalize",
+        default="mmSegformer_b0_augmentation",
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)

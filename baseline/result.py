@@ -17,7 +17,7 @@ def main(args, k=1):
 
     print(args)
 
-    tf = A.Resize(256, 256)
+    tf = A.Resize(2048, 2048)
 
     test_dataset = XRayInferenceDataset(
         test_path=args.test_path,
@@ -30,10 +30,10 @@ def main(args, k=1):
         num_workers=2,
         drop_last=False,
     )
-
+    print(len(test_dataset))
     for i in range(k):
         model = torch.load(
-            os.path.join(args.pretrained_dir, f"/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/UNet_last.pth")
+            os.path.join(args.pretrained_dir, f"/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b0_no_aug_best0.pth")
         )
         rles, filename_and_class = test(model, args.classes, test_loader)
         classes, filename = zip(*[x.split("_") for x in filename_and_class])
@@ -89,7 +89,7 @@ def parse_args():
     parser.add_argument(
         "--test_path",
         type=str,
-        default="/opt/ml/level2_cv_semanticsegmentation-cv-01/data/test/DCM",
+        default="/opt/ml/data/test/DCM",
     )
     parser.add_argument(
         "--saved_dir",

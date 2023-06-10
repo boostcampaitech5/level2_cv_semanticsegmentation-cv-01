@@ -4,7 +4,7 @@ _base_ = [
     '/opt/ml/level2_cv_semanticsegmentation-cv-01/baseline/mmsegmentation/configs/_base_/default_runtime.py', 
     '/opt/ml/level2_cv_semanticsegmentation-cv-01/baseline/mmsegmentation/configs/_base_/schedules/schedule_160k.py'
 ]
-crop_size = (512, 512)
+crop_size = (1024, 1024)
 data_preprocessor = dict(size=crop_size)
 model = dict(
     decode_head=dict(num_classes=29),
