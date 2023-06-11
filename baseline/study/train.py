@@ -1,5 +1,6 @@
 import wandb
 import datetime
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -22,7 +23,8 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
 
-            outputs = model(images)["out"]
+            # outputs = model(images)["out"]
+            outputs = model(images)
 
             output_h, output_w = outputs.size(-2), outputs.size(-1)
             mask_h, mask_w = masks.size(-2), masks.size(-1)
@@ -74,7 +76,15 @@ def train(
 
             with torch.cuda.amp.autocast(enabled=True):
                 # inference
-                outputs = model(images)["out"]
+                # outputs = model(images)["out"]
+                outputs = model(images)
+                output_h, output_w = outputs.size(-2), outputs.size(-1)
+                mask_h, mask_w = masks.size(-2), masks.size(-1)
+
+                if output_h != mask_h or output_w != mask_w:
+                    outputs = F.interpolate(
+                        outputs, size=(mask_h, mask_w), mode="bilinear"
+                    )
                 # loss 계산
                 loss = criterion(outputs, masks)
 

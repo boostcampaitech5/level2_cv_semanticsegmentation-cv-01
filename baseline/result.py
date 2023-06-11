@@ -17,7 +17,7 @@ def main(args, k=1):
 
     print(args)
 
-    tf = A.Resize(256, 256)
+    tf = A.Resize(args.resize, args.resize)
 
     test_dataset = XRayInferenceDataset(
         test_path=args.test_path,
@@ -44,6 +44,16 @@ def main(args, k=1):
             }
         )
         df.to_csv(os.path.join(args.saved_dir, f"{args.output}{i}.csv"), index=False)
+        full_df = pd.DataFrame(
+            {
+                "image_name": filename,
+                "class": classes,
+                "rle": rles,
+            }
+        )
+        full_df.to_csv(
+            os.path.join(args.saved_dir, f"{args.output}{i}_full.csv"), index=False
+        )
 
 
 def parse_args():
@@ -109,6 +119,7 @@ def parse_args():
         type=str,
         default="fcn_res50_cosAnn_best",
     )
+    parser.add_argument("--resize", type=int, default=256)
 
     args = parser.parse_args()
     return args

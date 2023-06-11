@@ -10,7 +10,9 @@ from torch.utils.data import DataLoader
 from dataset.XRayTrainDataset import XRayTrainDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from scheduler.CosinePowerAnnealing import CosinePowerAnnealing
-from models import fcn_resnet50, deeplabv3_resnet50
+from loss.loss import DiceBCE
+from models import *
+from hrnet.hrnet_48w_ocr import hrnet_48w_ocr
 from study.train import train
 from utils import set_seed
 
@@ -47,7 +49,7 @@ def main(args, k=1):
             dataset=train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=8,
+            num_workers=2,
             drop_last=True,
         )
         valid_loader = DataLoader(
@@ -58,10 +60,10 @@ def main(args, k=1):
             drop_last=False,
         )
 
-        model = deeplabv3_resnet50(len(args.classes))
+        model = hrnet_48w_ocr()
 
         # Loss function 정의
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = DiceBCE()
 
         # Optimizer 정의
         optimizer = optim.AdamW(
@@ -73,7 +75,8 @@ def main(args, k=1):
         #     max_lr=10,
         #     min_lr=0.5,
         # )
-        scheduler = CosineAnnealingLR(optimizer, T_max=args.num_epoch, eta_min=1e-4)
+        # scheduler = CosineAnnealingLR(optimizer, T_max=args.num_epoch, eta_min=1e-4)
+        scheduler = CosineAnnealingLR(optimizer, T_max=20, eta_min=5e-4)
         train(
             model,
             args,
