@@ -19,18 +19,17 @@ def main(args, k=1):
     print(args)
 
     wandb.init(project="segmentation", name=args.model_name)
-    wandb.define_metric('class_accuracy/*',step_metic='epoch')
+
     tf = A.Compose([A.Resize(args.resize, args.resize),
                     A.RandomScale((0.1,0.1)) ,
-                    A.PadIfNeeded(512,512),
+                    A.PadIfNeeded(args.resize,args.resize),
                     A.Rotate(10),
-                    A.RandomCrop(512,512),
-                    A.GaussNoise(var_limit=(0,0.005),per_channel=False),
+                    A.RandomCrop(args.resize,args.resize),
                     A.CoarseDropout(60,5,5,10),
                     A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1)
     ])
     val_tf = A.Compose([A.Resize(args.resize, args.resize),
-                    A.Normalize(max_pixel_value=1)
+                    A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641),max_pixel_value=1)
     ])
     for i in range(k):
         train_dataset = PreProcessDataset(
@@ -45,21 +44,21 @@ def main(args, k=1):
             image_path=args.image_path,
             classes=args.classes,
             is_train=False,
-            transforms=tf,
+            transforms=val_tf,
         )
 
         train_loader = DataLoader(
             dataset=train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=1,
+            num_workers=0,
             drop_last=False,
         )
         valid_loader = DataLoader(
             dataset=valid_dataset,
-            batch_size=1,
+            batch_size=args.batch_size,
             shuffle=False,
-            num_workers=1,
+            num_workers=0,
             drop_last=False,
         )
 
@@ -136,10 +135,10 @@ def parse_args():
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)
-    parser.add_argument("--batch_size", type=int, default=2)
+    parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--lr", type=float, default=6e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
-    parser.add_argument("--val_every", type=int, default=5)
+    parser.add_argument("--val_every", type=int, default=1)
 
     args = parser.parse_args()
     return args

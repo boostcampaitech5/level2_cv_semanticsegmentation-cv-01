@@ -17,7 +17,9 @@ def main(args, k=1):
 
     print(args)
 
-    tf = A.Resize(2048, 2048)
+    tf = A.Compose([A.Resize(1024, 1024),
+                    A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1)
+                    ])
 
     test_dataset = XRayInferenceDataset(
         test_path=args.test_path,
@@ -33,7 +35,7 @@ def main(args, k=1):
     print(len(test_dataset))
     for i in range(k):
         model = torch.load(
-            os.path.join(args.pretrained_dir, f"/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b0_no_aug_best0.pth")
+            os.path.join(args.pretrained_dir, f"/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b0_normalize_best0.pth")
         )
         rles, filename_and_class = test(model, args.classes, test_loader)
         classes, filename = zip(*[x.split("_") for x in filename_and_class])

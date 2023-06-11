@@ -7,7 +7,8 @@ from tqdm.auto import tqdm
 from utils import save_model, dice_coef
 from time import time
 
-debug_test = True
+debug_test = False
+debug_interval = 2
 
 def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
     print(f"Start validation #{epoch:2d}")
@@ -22,7 +23,6 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
             enumerate(data_loader), total=len(data_loader)
         ):
             images, masks = images.cuda(), masks.cuda()
-            model = model.cuda()
 
             outputs = model(images)
 
@@ -52,10 +52,13 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
     print(dice_str)
 
     avg_dice = torch.mean(dices_per_class).item()
+    log_data = {f"class_accuracy/{k}": v.item() for k, v in zip(classes, dices_per_class) }
+    log_data.update({"train/val_avg_dice": avg_dice,"epoch":epoch})
+    print(log_data)
     wandb.log(
-        {f"class_accuracy/{k}": v.item() for k, v in zip(classes, dices_per_class) }.update({'epoch':epoch})
+        log_data,
+        step = epoch
     )
-    wandb.log({"train/val_avg_dice": avg_dice})
     return avg_dice
 
 
@@ -63,14 +66,14 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order,accu
     print(f"Start training..")
 
     best_dice = 0.0
-
+    model = model.cuda()
     scaler = torch.cuda.amp.GradScaler(enabled=True)
     
     for epoch in range(args.num_epoch):
         model.train()
         for step, (images, masks) in enumerate(data_loader):
             images, masks = images.cuda(), masks.cuda()
-            model = model.cuda()
+            
             optimizer.zero_grad()
 
             with torch.cuda.amp.autocast(enabled=True):
