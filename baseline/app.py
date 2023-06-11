@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from torch.utils.data import DataLoader
 
 from dataset.XRayTrainDataset import XRayTrainDataset
-from models import fcn_resnet50
+from models import fcn_resnet50, deeplabv3, UNet3plus
 from study.train import train
 from utils import set_seed
 
@@ -53,7 +53,9 @@ def main(args, k=1):
             drop_last=False,
         )
 
-        model = fcn_resnet50(len(args.classes))
+        # model = fcn_resnet50(len(args.classes))
+        # model = deeplabv3(len(args.classes))
+        model = UNet3plus(len(args.classes))
 
         # Loss function 정의
         criterion = nn.BCEWithLogitsLoss()

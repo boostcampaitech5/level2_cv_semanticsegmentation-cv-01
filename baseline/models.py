@@ -1,6 +1,7 @@
 import torch.nn as nn
 
 from torchvision import models
+from UNet3plus.UNet3Plus import UNet3Plus
 
 
 def fcn_resnet50(class_len):
@@ -14,4 +15,8 @@ def deeplabv3(class_len):
     model = models.segmentation.deeplabv3_resnet50(pretrained=True)
     
     model.classifier = models.segmentation.deeplabv3.DeepLabHead(2048, class_len)
+    return model
+
+def UNet3plus(class_len):
+    model = UNet3Plus(n_channels=3, n_classes=class_len)
     return model
