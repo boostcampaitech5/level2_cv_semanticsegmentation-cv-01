@@ -237,7 +237,7 @@ class UNet3Plus(nn.Module):
 
         d1 = self.outconv1(hd1)  # d1->320*320*n_classes
         # return F.sigmoid(d1)
-        return {"out" : F.sigmoid(d1)}
+        return {"out" : d1}
 
 
 #UNet 3+ with deep supervision
