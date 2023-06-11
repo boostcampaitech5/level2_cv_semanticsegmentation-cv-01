@@ -126,9 +126,9 @@ def parse_args():
     parser.add_argument("--num_epoch", type=int, default=80)
     parser.add_argument("--resize", type=int, default=256)
     parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=0.0001)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
-    parser.add_argument("--val_every", type=int, default=1)
+    parser.add_argument("--val_every", type=int, default=5)
 
     args = parser.parse_args()
     return args
