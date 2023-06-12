@@ -11,7 +11,7 @@ from dataset.PreprocessDataset import PreProcessDataset
 from models import *
 from study.train import train
 from utils import set_seed
-
+from loss.loss import CustomLoss
 
 def main(args, k=1):
     seed = 21
@@ -25,7 +25,7 @@ def main(args, k=1):
                     A.PadIfNeeded(args.resize,args.resize),
                     A.Rotate(10),
                     A.RandomCrop(args.resize,args.resize),
-                    A.CoarseDropout(60,5,5,10),
+                    # A.CoarseDropout(60,5,5,10),
                     A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1)
     ])
     val_tf = A.Compose([A.Resize(args.resize, args.resize),
@@ -65,7 +65,7 @@ def main(args, k=1):
         model = MMSegFormer()
         
         # Loss function 정의
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = CustomLoss()
 
         # Optimizer 정의
         optimizer = optim.AdamW([
@@ -131,14 +131,14 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b0_augmentation",
+        default="mmSegformer_b0_loss",
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--lr", type=float, default=6e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
-    parser.add_argument("--val_every", type=int, default=1)
+    parser.add_argument("--val_every", type=int, default=5)
 
     args = parser.parse_args()
     return args
