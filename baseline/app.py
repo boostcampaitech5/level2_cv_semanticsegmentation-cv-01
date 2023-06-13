@@ -24,6 +24,7 @@ def main(args, k=1):
         # A.FromFloat(dtype='uint8'),
         # A.CLAHE(clip_limit=4.0, tile_grid_size=(8, 8), always_apply=True, p=0.5),
         # A.ToFloat(),
+        A.ElasticTransform(alpha=50, sigma=10, alpha_affine=4, p=0.2),
         A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1),
     ])
     val_tf = A.Compose([A.Resize(args.resize, args.resize),
