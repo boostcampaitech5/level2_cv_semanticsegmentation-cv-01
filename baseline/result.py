@@ -35,7 +35,7 @@ def main(args, k=1):
     print(len(test_dataset))
     for i in range(k):
         model = torch.load(
-            os.path.join(args.pretrained_dir, f"/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b0_normalize_best0.pth")
+            os.path.join(args.pretrained_dir, f"mmSegformer_b0_augmentation_best0.pth")
         )
         rles, filename_and_class = test(model, args.classes, test_loader)
         classes, filename = zip(*[x.split("_") for x in filename_and_class])

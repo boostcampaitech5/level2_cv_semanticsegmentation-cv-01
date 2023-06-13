@@ -1,7 +1,7 @@
 from torch import nn
 import torch
 from .boundaryloss import BoundaryLoss  
-
+from .focalloss import MMFocalLoss
 
 def DiceLoss(pred,target):
     y_true_f = target.flatten(2)
@@ -19,32 +19,40 @@ def DiceLoss(pred,target):
 
 class FocalLoss(nn.Module):
     #Focal loss for segmentation
-    #단, 데이터 특성상 각 클래스의 면적 비율이 비슷하므로 조금 다르게 구현함
-    def __init__(self,gamma=0.5,alpha=None):
-        self.CE = nn.BCELoss(reduction='none')
-        self.alpha = alpha
+    #단, 데이터 특성상 이미지당 각 클래스의 면적 비율이 비슷하므로 조금 다르게 구현함
+    def __init__(self,gamma=2,alpha=0.5,loss_weight=2):
+        super().__init__()
+        self.CE = nn.BCEWithLogitsLoss(reduction='none')
+        # self.alpha = torch.FloatTensor(alpha).cuda()
+        self.alpha=alpha
         self.gamma = gamma
         self.eps = 0.01
+        self.loss_weight=loss_weight
     def forward(self,pred,target):
-        if self.alpha:
-            alpha=self.alpha
-        else:
-            #각 부분의 면적비율로 alpha 생성
-            alpha = torch.sum(target,dim=(0,2,3))+self.eps
-            alpha = 1/alpha
-            alpha /= alpha.sum()
+        # if self.alpha!= None:
+        #     alpha=self.alpha
+        # else:
+        #     # 각 부분의 면적비율로 alpha 생성
+        #     alpha = torch.sum(target,dim=(0,2,3))+self.eps
+        #     alpha = 1/alpha
+        #     alpha /= torch.sum(alpha)
+            
+        alpha = self.alpha*target + (1-self.alpha)*(1-target)
+
+        #print(alpha)
+        
         #ce_loss.shape = (B,C,H,W)->(C)
-        pred = nn.functional.sigmoid(pred)
         ce_loss = self.CE(pred,target)
-        ce_loss = ce_loss.mean((2,3))
-        weights=(1-pred).pow(self.gamma)
-        weights = weights.mean((2,3))
+        # ce_loss = ce_loss
+        weights=torch.abs(pred-nn.functional.sigmoid(pred)).pow(self.gamma)
+        # weights = weights
         focal_loss = alpha*weights*ce_loss
-        print(focal_loss.shape)
         focal_loss = focal_loss.mean()
-        return focal_loss
 
+        return focal_loss*self.loss_weight
 
+def mmFocalLoss(alpha=0.5,loss_weight=2.0):
+    return MMFocalLoss(alpha=alpha,loss_weight=loss_weight)
 class CustomLoss(nn.Module):
     def __init__(self) -> None:
         super().__init__()

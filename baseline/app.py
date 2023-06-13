@@ -11,8 +11,7 @@ from dataset.PreprocessDataset import PreProcessDataset
 from models import *
 from study.train import train
 from utils import set_seed
-from loss.loss import CustomLoss
-
+from loss.loss import *
 def main(args, k=1):
     seed = 21
     set_seed(seed)
@@ -51,22 +50,28 @@ def main(args, k=1):
             dataset=train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=0,
+            num_workers=4,
             drop_last=False,
         )
         valid_loader = DataLoader(
             dataset=valid_dataset,
-            batch_size=args.batch_size,
+            batch_size=1,
             shuffle=False,
-            num_workers=0,
+            num_workers=2,
             drop_last=False,
         )
 
         model = MMSegFormer()
         
         # Loss function 정의
-        criterion = CustomLoss()
-
+        # criterion = CustomLoss()
+        # alpha = [0.9287, 0.9128, 0.9094, 0.9266, 0.9163, 0.9059, 0.9121, 0.9207, 0.9137,
+        # 0.9055, 0.9165, 0.9223, 0.9155, 0.9107, 0.9167, 0.9340, 0.9270, 0.9110,
+        # 0.9110, 0.9490, 0.9861, 0.9400, 0.9469, 0.9282, 0.9382, 0.9408, 1.0000,
+        # 0.9041, 0.9083]
+        alpha=0.5
+        # criterion = FocalLoss(gamma=2,alpha=alpha)
+        criterion = mmFocalLoss(alpha=alpha,loss_weight=3.0)
         # Optimizer 정의
         optimizer = optim.AdamW([
             {'params':model.model.backbone.parameters(), 'lr':args.lr, 'weight_decay':args.weight_decay},
@@ -131,12 +136,12 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b0_loss",
+        default="mmSegformer_b0_focalloss",
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)
     parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--lr", type=float, default=6e-5)
+    parser.add_argument("--lr", type=float, default=9e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--val_every", type=int, default=5)
 
