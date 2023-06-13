@@ -32,14 +32,14 @@ def main(args, k=1):
                     A.Normalize(mean=0.121,std=0.1641,max_pixel_value=1)
     ])
     for i in range(k):
-        train_dataset = PreProcessDatasetGray(
+        train_dataset = PreProcessDataset(
             val_idx=i,
             image_path=args.image_path,
             classes=args.classes,
             is_train=True,
             transforms=tf,
         )
-        valid_dataset = PreProcessDatasetGray(
+        valid_dataset = PreProcessDataset(
             val_idx=i,
             image_path=args.image_path,
             classes=args.classes,
@@ -62,7 +62,7 @@ def main(args, k=1):
             drop_last=False,
         )
 
-        model = MMGraySegFormer()
+        model = MMSegFormer()
         
         # Loss function 정의
         # criterion = CustomLoss()
