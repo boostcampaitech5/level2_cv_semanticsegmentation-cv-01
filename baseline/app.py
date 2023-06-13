@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 
 from dataset.XRayTrainDataset import XRayTrainDataset
 from dataset.PreprocessDataset import PreProcessDataset
+from dataset.PreprocessDataset_gray import PreProcessDatasetGray
 from models import *
 from study.train import train
 from utils import set_seed
@@ -25,20 +26,20 @@ def main(args, k=1):
                     A.Rotate(10),
                     A.RandomCrop(args.resize,args.resize),
                     # A.CoarseDropout(60,5,5,10),
-                    A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1)
+                    A.Normalize(mean=0.121,std=0.1641 ,max_pixel_value=1)
     ])
     val_tf = A.Compose([A.Resize(args.resize, args.resize),
-                    A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641),max_pixel_value=1)
+                    A.Normalize(mean=0.121,std=0.1641,max_pixel_value=1)
     ])
     for i in range(k):
-        train_dataset = PreProcessDataset(
+        train_dataset = PreProcessDatasetGray(
             val_idx=i,
             image_path=args.image_path,
             classes=args.classes,
             is_train=True,
             transforms=tf,
         )
-        valid_dataset = PreProcessDataset(
+        valid_dataset = PreProcessDatasetGray(
             val_idx=i,
             image_path=args.image_path,
             classes=args.classes,
@@ -61,7 +62,7 @@ def main(args, k=1):
             drop_last=False,
         )
 
-        model = MMSegFormer()
+        model = MMGraySegFormer()
         
         # Loss function 정의
         # criterion = CustomLoss()
@@ -136,7 +137,7 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b0_focalloss",
+        default="mmSegformer_b0_upsample_gray",
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)

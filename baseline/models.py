@@ -102,9 +102,30 @@ class MMSegFormer(nn.Module):
             checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/segformer/segformer_mit-b5_512x512_160k_ade20k/segformer_mit-b5_512x512_160k_ade20k_20210726_145235-94cedf59.pth'
         self.model = init_model(cfg,checkpoint)
         self.upsample = nn.Upsample(scale_factor = 4, mode='bilinear')
+        self.upsample_conv = nn.Conv2d(29,29,3,1,1,groups=29)
 
     def forward(self,input):
         output = self.model(input)
         output = self.upsample(output)
+        output = self.upsample_conv(output)
         return output
 
+class MMGraySegFormer(nn.Module):
+    def __init__(self,b=0) -> None:
+        super().__init__()
+        if b==0:
+            cfg=Config.fromfile('/opt/ml/level2_cv_semanticsegmentation-cv-01/baseline/mmconfig/gray_segformer_b0.py')
+            checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/segformer/segformer_mit-b0_512x512_160k_ade20k/segformer_mit-b0_512x512_160k_ade20k_20210726_101530-8ffa8fda.pth'
+
+        elif b==5:
+            cfg=Config.fromfile('/opt/ml/level2_cv_semanticsegmentation-cv-01/baseline/mmconfig/segformer.py')
+            checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/segformer/segformer_mit-b5_512x512_160k_ade20k/segformer_mit-b5_512x512_160k_ade20k_20210726_145235-94cedf59.pth'
+        self.model = init_model(cfg,checkpoint)
+        self.upsample = nn.Upsample(scale_factor = 4, mode='bilinear')
+        self.upsample_conv = nn.Conv2d(29,29,3,1,1,groups=29)
+
+    def forward(self,input):
+        output = self.model(input)
+        output = self.upsample(output)
+        output = self.upsample_conv(output)
+        return output
