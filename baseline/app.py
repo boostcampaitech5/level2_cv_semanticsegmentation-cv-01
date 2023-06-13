@@ -10,7 +10,7 @@ from dataset.XRayTrainDataset import XRayTrainDataset
 from models import fcn_resnet50, deeplabv3, UNet3plus
 from study.train import train
 from utils import set_seed
-
+from loss import weighted_sum_loss
 
 def main(args, k=1):
     seed = 21
@@ -19,7 +19,16 @@ def main(args, k=1):
 
     wandb.init(project="segmentation", name=args.model_name)
 
-    tf = A.Resize(args.resize, args.resize)
+    train_tf = A.Compose([
+        A.Resize(args.resize, args.resize),
+        # A.FromFloat(dtype='uint8'),
+        # A.CLAHE(clip_limit=4.0, tile_grid_size=(8, 8), always_apply=True, p=0.5),
+        # A.ToFloat(),
+        A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1),
+    ])
+    val_tf = A.Compose([A.Resize(args.resize, args.resize),
+                    A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641),max_pixel_value=1)
+    ])
     for i in range(k):
         train_dataset = XRayTrainDataset(
             val_idx=i,
@@ -27,7 +36,7 @@ def main(args, k=1):
             label_path=args.label_path,
             classes=args.classes,
             is_train=True,
-            transforms=tf,
+            transforms=train_tf,
         )
         valid_dataset = XRayTrainDataset(
             val_idx=i,
@@ -35,7 +44,7 @@ def main(args, k=1):
             label_path=args.label_path,
             classes=args.classes,
             is_train=False,
-            transforms=tf,
+            transforms=val_tf,
         )
 
         train_loader = DataLoader(
@@ -58,7 +67,8 @@ def main(args, k=1):
         model = UNet3plus(len(args.classes))
 
         # Loss function 정의
-        criterion = nn.BCEWithLogitsLoss()
+        # criterion = nn.BCEWithLogitsLoss()
+        criterion = weighted_sum_loss
 
         # Optimizer 정의
         optimizer = optim.AdamW(
