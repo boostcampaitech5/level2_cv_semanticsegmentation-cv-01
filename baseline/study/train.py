@@ -63,8 +63,6 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
 
 
 def train(model, args, data_loader, val_loader, criterion, optimizer, order,epoch,accum_step=1):
-    print(f"Start training..")
-
 
     scaler = torch.cuda.amp.GradScaler(enabled=True)
 
@@ -107,7 +105,6 @@ def run(model, args, data_loader, val_loader, criterion, optimizer, order,accum_
     for epoch in range(args.num_epoch):
         train(model, args, data_loader, val_loader, criterion, optimizer, order,epoch,accum_step=4)
         if (epoch + 1) % args.val_every == 0:
-            torch.cuda.empty_cache()
             dice = validation(epoch + 1, model, args.classes, val_loader, criterion)
             if best_dice < dice:
                 print(

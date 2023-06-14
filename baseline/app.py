@@ -5,8 +5,7 @@ import albumentations as A
 
 from argparse import ArgumentParser
 from torch.utils.data import DataLoader
-import torchvision
-import torchvision.transforms as tfs
+
 from dataset.XRayTrainDataset import XRayTrainDataset
 from dataset.PreprocessDataset import PreProcessDataset
 from dataset.PreprocessDataset_gray import PreProcessDatasetGray
@@ -20,6 +19,7 @@ def custom_collate_fn(sample):
     img = np.array(img,dtype=np.float32)
     label = np.array(label,dtype=np.float32)
     return img,label
+
 def main(args, k=1):
     seed = 21
     set_seed(seed)
@@ -33,7 +33,7 @@ def main(args, k=1):
                     A.Rotate(10),
                     A.RandomCrop(args.resize,args.resize),
                     # A.CoarseDropout(60,5,5,10),
-                    # A.ElasticTransform(alpha=50,sigma=10,alpha_affine=4,p=0.3),
+                    A.ElasticTransform(alpha=50,sigma=10,alpha_affine=4,p=0.3),
                     A.Normalize(mean=0.121,std=0.1641 ,max_pixel_value=1)
     ])
     val_tf = A.Compose([A.Resize(args.resize, args.resize),
@@ -59,7 +59,7 @@ def main(args, k=1):
             dataset=train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=8,
+            num_workers=4,
             drop_last=False,
             collate_fn=custom_collate_fn,
             # prefetch_factor=1
@@ -69,17 +69,17 @@ def main(args, k=1):
             dataset=valid_dataset,
             batch_size=args.batch_size//2,
             shuffle=False,
-            num_workers=8,
+            num_workers=4,
             drop_last=False,
             collate_fn=custom_collate_fn,
             # prefetch_factor=1
         )
 
-        model = MMSegFormer()
+        model = MMSegFormerB4()
         
         # Loss function 정의
         criterion = CustomLoss()
-        # alpha = [0.9287, 0.9128, 0.9094, 0.9266, 0.9163, 0.9059, 0.9121, 0.9207, 0.9137,
+        # weight = [0.9287, 0.9128, 0.9094, 0.9266, 0.9163, 0.9059, 0.9121, 0.9207, 0.9137,
         # 0.9055, 0.9165, 0.9223, 0.9155, 0.9107, 0.9167, 0.9340, 0.9270, 0.9110,
         # 0.9110, 0.9490, 0.9861, 0.9400, 0.9469, 0.9282, 0.9382, 0.9408, 1.0000,
         # 0.9041, 0.9083]
@@ -151,11 +151,11 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b0_upsample_conv",
+        default="mmSegformer_b4_upsample",
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--lr", type=float, default=6e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--val_every", type=int, default=5)
