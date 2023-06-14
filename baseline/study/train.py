@@ -80,6 +80,7 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order,epoc
             loss = criterion(outputs, masks)
         scaler.scale(loss).backward()
         if (step+1)%accum_step == 0 or step+1 == len(data_loader):
+            torch.nn.utils.clip_grad.clip_grad_norm(model.parameters(),2.0)
             scaler.step(optimizer)
             scaler.update()
 
