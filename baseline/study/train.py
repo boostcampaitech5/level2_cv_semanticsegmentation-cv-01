@@ -19,11 +19,11 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
         total_loss = 0
         cnt = 0
 
-        for step, (images, masks) in tqdm(
+        for step,(images, masks) in  tqdm(
             enumerate(data_loader), total=len(data_loader)
         ):
-            images, masks = images.cuda(), masks.cuda()
-
+            images, masks = torch.from_numpy(images).cuda(), torch.from_numpy(masks).cuda()
+            # images. masks = images.cuda(), masks.cuda()
             outputs = model(images)
 
             output_h, output_w = outputs.size(-2), outputs.size(-1)
@@ -62,44 +62,53 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
     return avg_dice
 
 
-def train(model, args, data_loader, val_loader, criterion, optimizer, order,accum_step=1):
+def train(model, args, data_loader, val_loader, criterion, optimizer, order,epoch,accum_step=1):
+    print(f"Start training..")
+
+
+    scaler = torch.cuda.amp.GradScaler(enabled=True)
+
+    model.train()
+    for step, (images, masks) in enumerate(data_loader):
+        images, masks = torch.from_numpy(images).cuda(), torch.from_numpy(masks).cuda()
+        # images, masks = images.cuda(), masks.cuda()
+
+        optimizer.zero_grad()
+
+        with torch.cuda.amp.autocast(enabled=True):
+            # inference
+            outputs = model(images)
+            # loss 계산
+            loss = criterion(outputs, masks)
+        scaler.scale(loss).backward()
+        if (step+1)%accum_step == 0 or step+1 == len(data_loader):
+            scaler.step(optimizer)
+            scaler.update()
+
+        wandb.log({"train/LR": args.lr, "train/loss": loss})
+
+        if (step + 1) % 20 == 0:
+            print(
+                f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | '
+                f"Epoch [{epoch+1}/{args.num_epoch}], "
+                f"Step [{step+1}/{len(data_loader)}], "
+                f"Loss: {round(loss.item(),4)}"
+            )
+        if debug_test:
+            break
+        
+            
+def run(model, args, data_loader, val_loader, criterion, optimizer, order,accum_step=1):
     print(f"Start training..")
 
     best_dice = 0.0
     model = model.cuda()
-    scaler = torch.cuda.amp.GradScaler(enabled=True)
     
     for epoch in range(args.num_epoch):
-        model.train()
-        for step, (images, masks) in enumerate(data_loader):
-            images, masks = images.cuda(), masks.cuda()
-            
-            optimizer.zero_grad()
-
-            with torch.cuda.amp.autocast(enabled=True):
-                # inference
-                outputs = model(images)
-                # loss 계산
-                loss = criterion(outputs, masks)
-            scaler.scale(loss).backward()
-            if (step+1)%accum_step == 0 or step+1 == len(data_loader):
-                scaler.step(optimizer)
-                scaler.update()
-
-            wandb.log({"train/LR": args.lr, "train/loss": loss})
-
-            if (step + 1) % 20 == 0:
-                print(
-                    f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | '
-                    f"Epoch [{epoch+1}/{args.num_epoch}], "
-                    f"Step [{step+1}/{len(data_loader)}], "
-                    f"Loss: {round(loss.item(),4)}"
-                )
-            if debug_test:
-                break
+        train(model, args, data_loader, val_loader, criterion, optimizer, order,epoch,accum_step=4)
         if (epoch + 1) % args.val_every == 0:
+            torch.cuda.empty_cache()
             dice = validation(epoch + 1, model, args.classes, val_loader, criterion)
-
             if best_dice < dice:
                 print(
                     f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}"
@@ -117,4 +126,3 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order,accu
                     save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
                     file_name=f"{args.model_name}_last.pth"
                 )
-            
