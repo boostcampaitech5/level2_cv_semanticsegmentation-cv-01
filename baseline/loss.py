@@ -48,7 +48,7 @@ class TverskyLoss(nn.Module):
 def weighted_sum_loss(pred, gt, weight=0.5):
     bce = F.binary_cross_entropy_with_logits(pred, gt)
     pred = F.sigmoid(pred)
-    dice = dice_loss(pred, gt, 0.2)
+    dice = dice_loss(pred, gt)
     loss = bce * weight + dice * (1-weight)
 
     return loss

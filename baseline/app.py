@@ -21,9 +21,6 @@ def main(args, k=1):
 
     train_tf = A.Compose([
         A.Resize(args.resize, args.resize),
-        # A.FromFloat(dtype='uint8'),
-        # A.CLAHE(clip_limit=4.0, tile_grid_size=(8, 8), always_apply=True, p=0.5),
-        # A.ToFloat(),
         A.ElasticTransform(alpha=50, sigma=10, alpha_affine=4, p=0.2),
         A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1),
     ])
@@ -52,14 +49,15 @@ def main(args, k=1):
             dataset=train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=8,
+            # num_workers=8,
+            num_workers=2,
             drop_last=True,
         )
         valid_loader = DataLoader(
             dataset=valid_dataset,
             batch_size=2,
             shuffle=False,
-            num_workers=2,
+            num_workers=0,
             drop_last=False,
         )
 
@@ -136,9 +134,12 @@ def parse_args():
         type=str,
         default="fcn_res50",
     )
-    parser.add_argument("--num_epoch", type=int, default=80)
-    parser.add_argument("--resize", type=int, default=256)
-    parser.add_argument("--batch_size", type=int, default=16)
+    # parser.add_argument("--num_epoch", type=int, default=80)
+    parser.add_argument("--num_epoch", type=int, default=130)
+    # parser.add_argument("--resize", type=int, default=256)
+    parser.add_argument("--resize", type=int, default=512)
+    # parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--lr", type=float, default=0.0001)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--val_every", type=int, default=5)

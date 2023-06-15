@@ -18,7 +18,8 @@ def main(args, k=1):
     print(args)
 
     tf = A.Compose([
-        A.Resize(args.resize, args.resize),
+        # A.Resize(256, 256),
+        A.Resize(512, 512),
         A.Normalize(mean=(0.121,0.121,0.121),std=(0.1641,0.1641,0.1641) ,max_pixel_value=1),
     ])
     test_dataset = XRayInferenceDataset(
