@@ -28,10 +28,11 @@ def main(args, k=1):
     wandb.init(project="segmentation", name=args.model_name)
 
     tf = A.Compose([A.Resize(args.resize, args.resize),
-                    A.RandomScale((0.1,0.1)) ,
-                    A.PadIfNeeded(args.resize,args.resize),
-                    A.Rotate(10),
-                    A.RandomCrop(args.resize,args.resize),
+                    A.HorizontalFlip(),
+                    # A.RandomScale((0.1,0.1)) ,
+                    # A.PadIfNeeded(args.resize,args.resize),
+                    # A.Rotate(10),
+                    # A.RandomCrop(args.resize,args.resize),
                     # A.CoarseDropout(60,5,5,10),
                     A.ElasticTransform(alpha=50,sigma=10,alpha_affine=4,p=0.3),
                     A.Normalize(mean=0.121,std=0.1641 ,max_pixel_value=1)
@@ -40,6 +41,7 @@ def main(args, k=1):
                     A.Normalize(mean=0.121,std=0.1641,max_pixel_value=1)
     ])
     for i in range(k):
+        i=1
         train_dataset = PreProcessDataset(
             val_idx=i,
             image_path=args.image_path,
@@ -76,7 +78,14 @@ def main(args, k=1):
         )
 
         model = MMSegFormerB4()
+        # env = model.model._env_variables
+        backup = torch.load('/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b4_upsample_backup.pth')
+        model.model.backbone = backup.model.backbone
+        model.model.decode_head = backup.model.decode_head
+        model.upsample_conv = backup.upsample_conv
+        # break
         
+
         # Loss function 정의
         criterion = CustomLoss()
         # weight = [0.9287, 0.9128, 0.9094, 0.9266, 0.9163, 0.9059, 0.9121, 0.9207, 0.9137,
@@ -151,14 +160,14 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b4_upsample",
+        default="mmSegformer_b4_upsample_more",
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)
     parser.add_argument("--batch_size", type=int, default=2)
-    parser.add_argument("--lr", type=float, default=6e-5)
+    parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
-    parser.add_argument("--val_every", type=int, default=5)
+    parser.add_argument("--val_every", type=int, default=2)
 
     args = parser.parse_args()
     return args

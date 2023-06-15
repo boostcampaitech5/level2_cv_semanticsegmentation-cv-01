@@ -134,10 +134,11 @@ class MMSegFormerB4(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         cfg=Config.fromfile('/opt/ml/level2_cv_semanticsegmentation-cv-01/baseline/mmconfig/segformer_b4.py')
-        checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/segformer/segformer_mit-b4_512x512_160k_ade20k/segformer_mit-b4_512x512_160k_ade20k_20210728_183055-7f509d7d.pth'
+        # checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/segformer/segformer_mit-b4_512x512_160k_ade20k/segformer_mit-b4_512x512_160k_ade20k_20210728_183055-7f509d7d.pth'
+        # cfg['load_from'] = '/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b4_upsample_backup.pth'
+        # ckp = '/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b4_upsample_backup.pth'
 
-        
-        self.model = init_model(cfg,checkpoint)
+        self.model = init_model(cfg)
         self.upsample = nn.Upsample(scale_factor = 4, mode='bilinear')
         self.upsample_conv = nn.Conv2d(29,29,3,1,1,groups=29)
 
