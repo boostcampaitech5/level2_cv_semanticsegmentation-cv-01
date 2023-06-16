@@ -19,7 +19,10 @@ def get_inner_files(path, extension):
 
 class PreProcessDataset(Dataset):
     def __init__(self, val_idx, image_path, classes, is_train=True, transforms=None):
+        remove_list = ['ID325/image1664846270124.npz','ID058/image1661392103627.npz','ID089/image1661821711879.npz']
         _filenames = np.load(os.path.join(image_path,'train.npy'))
+        remove_idx = np.where(np.isin(_filenames,remove_list))
+        _filenames = np.delete(_filenames,remove_idx)
         groups = [os.path.dirname(fname) for fname in _filenames]
         ys = [0 for _ in _filenames]
         gkf = GroupKFold(n_splits=5)
