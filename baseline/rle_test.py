@@ -9,8 +9,32 @@ from torch.utils.data import DataLoader
 from dataset.XRayInferenceDataset import XRayInferenceDataset
 from study.inference import test
 from utils import set_seed
-
-
+import torch.nn.functional as F
+from tqdm import tqdm
+import numpy as np
+def encode_mask_to_rle(mask):
+    """
+    mask: numpy array binary mask
+    1 - mask
+    0 - background
+    Returns encoded run length
+    """
+    pixels = mask.flatten()
+    pixels = np.concatenate([[0], pixels, [0]])
+    runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
+    runs[1::2] -= runs[::2]
+    return " ".join(str(x) for x in runs)
+def decode_rle_to_mask(rle, height, width):
+    s = rle.split()
+    starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
+    starts -= 1
+    ends = starts + lengths
+    img = np.zeros(height * width, dtype=np.uint8)
+    
+    for lo, hi in zip(starts, ends):
+        img[lo:hi] = 1
+    
+    return img.reshape(height, width)
 def main(args, k=1):
     seed = 21
     set_seed(seed)
@@ -27,16 +51,38 @@ def main(args, k=1):
     )
     test_loader = DataLoader(
         dataset=test_dataset,
-        batch_size=2,
+        batch_size=1,
         shuffle=False,
-        num_workers=6,
+        num_workers=1,
         drop_last=False,
     )
     print(len(test_dataset))
+    thr= 0.5
+    ind2class = {i: v for i, v in enumerate(args.classes)}
     for i in range(k):
         model = torch.load(
-            os.path.join(args.pretrained_dir, f"mmSegformer_b4_upsample_more_target2_best2.pth")
+            os.path.join(args.pretrained_dir, f"mmSegformer_b4_upsample_more_best1.pth")
         )
+        with torch.no_grad():
+            for _, (images, image_names) in tqdm(
+                enumerate(test_loader), total=len(test_loader)
+            ):
+                images = images.cuda()
+                outputs = model(images)
+
+                # restore original size
+                outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
+                outputs = torch.sigmoid(outputs)
+                outputs = (outputs > thr).detach().cpu().numpy()
+                outputs = np.where(outputs>0.5,1,0)
+                rle = encode_mask_to_rle(outputs[0][0])
+
+                decode_output = decode_rle_to_mask(rle,2048,2048)
+
+                print(np.array_equal(outputs[0][0],decode_output))
+               
+        return
+
         rles, filename_and_class = test(model, args.classes, test_loader)
         classes, filename = zip(*[x.split("_") for x in filename_and_class])
         image_name = [os.path.basename(f) for f in filename]

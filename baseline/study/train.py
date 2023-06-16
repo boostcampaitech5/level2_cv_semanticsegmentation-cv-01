@@ -97,7 +97,7 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order,epoc
             break
         
             
-def run(model, args, data_loader, val_loader, criterion, optimizer, order,accum_step=1):
+def run(model, args, data_loader, val_loader, criterion, optimizer,scheduler, order,accum_step=1):
     print(f"Start training..")
 
     best_dice = 0.0
@@ -105,6 +105,7 @@ def run(model, args, data_loader, val_loader, criterion, optimizer, order,accum_
     
     for epoch in range(args.num_epoch):
         train(model, args, data_loader, val_loader, criterion, optimizer, order,epoch,accum_step=4)
+        scheduler.step(epoch+1)
         if (epoch + 1) % args.val_every == 0:
             dice = validation(epoch + 1, model, args.classes, val_loader, criterion)
             if best_dice < dice:
@@ -122,5 +123,5 @@ def run(model, args, data_loader, val_loader, criterion, optimizer, order,accum_
                 save_model(
                     model,
                     save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
-                    file_name=f"{args.model_name}_last.pth"
+                    file_name=f"{args.model_name}_epoch{epoch}.pth"
                 )

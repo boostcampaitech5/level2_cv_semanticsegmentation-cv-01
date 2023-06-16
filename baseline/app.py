@@ -41,7 +41,7 @@ def main(args, k=1):
                     A.Normalize(mean=0.121,std=0.1641,max_pixel_value=1)
     ])
     for i in range(k):
-        i=1
+        i=2
         train_dataset = PreProcessDataset(
             val_idx=i,
             image_path=args.image_path,
@@ -61,7 +61,7 @@ def main(args, k=1):
             dataset=train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=4,
+            num_workers=6,
             drop_last=False,
             collate_fn=custom_collate_fn,
             # prefetch_factor=1
@@ -69,7 +69,7 @@ def main(args, k=1):
         
         valid_loader = DataLoader(
             dataset=valid_dataset,
-            batch_size=args.batch_size//2,
+            batch_size=1,
             shuffle=False,
             num_workers=4,
             drop_last=False,
@@ -77,13 +77,16 @@ def main(args, k=1):
             # prefetch_factor=1
         )
 
-        model = MMSegFormerB4()
+        model = MMSegFormerB5()
         # env = model.model._env_variables
-        backup = torch.load('/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b4_upsample_backup.pth')
-        model.model.backbone = backup.model.backbone
-        model.model.decode_head = backup.model.decode_head
-        model.upsample_conv = backup.upsample_conv
-        # break
+
+
+        #load_from 필요할 경우
+        # backup = torch.load('/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b4_upsample_more_target2_best2.pth')
+        # model.model.backbone = backup.model.backbone
+        # model.model.decode_head = backup.model.decode_head
+        # model.upsample_conv = backup.upsample_conv
+        
         
 
         # Loss function 정의
@@ -101,7 +104,8 @@ def main(args, k=1):
             {'params':model.model.decode_head.parameters(), 'lr':args.lr*10, 'weight_decay':args.weight_decay},
             {'params':model.upsample_conv.parameters(), 'lr':args.lr*10, 'weight_decay':args.weight_decay}
         ])
-        run(model, args, train_loader, valid_loader, criterion, optimizer, i, accum_step=4)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer=optimizer,milestones=[60,70,90,110],gamma=0.3)
+        run(model, args, train_loader, valid_loader, criterion, optimizer,scheduler, i, accum_step=8)
 
 
 def parse_args():
@@ -160,14 +164,14 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b4_upsample_more",
+        default="mmSegformer_b5",
     )
     parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)
     parser.add_argument("--batch_size", type=int, default=2)
-    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--lr", type=float, default=6e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
-    parser.add_argument("--val_every", type=int, default=2)
+    parser.add_argument("--val_every", type=int, default=5)
 
     args = parser.parse_args()
     return args
