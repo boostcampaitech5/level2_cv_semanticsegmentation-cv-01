@@ -84,8 +84,8 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order,epoc
             scaler.step(optimizer)
             scaler.update()
 
-        wandb.log({"train/LR": args.lr, "train/loss": loss})
-
+        wandb.log({"train/LR": optimizer.param_groups[0]['lr'], "train/loss": loss})
+    
         if (step + 1) % 20 == 0:
             print(
                 f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | '
@@ -105,7 +105,8 @@ def run(model, args, data_loader, val_loader, criterion, optimizer,scheduler, or
     
     for epoch in range(args.num_epoch):
         train(model, args, data_loader, val_loader, criterion, optimizer, order,epoch,accum_step=4)
-        scheduler.step(epoch+1)
+        if scheduler is not None:
+            scheduler.step(epoch+1)
         if (epoch + 1) % args.val_every == 0:
             dice = validation(epoch + 1, model, args.classes, val_loader, criterion)
             if best_dice < dice:
