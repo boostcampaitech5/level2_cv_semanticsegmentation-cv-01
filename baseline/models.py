@@ -165,3 +165,20 @@ class MMSegFormerB5(nn.Module):
         output = self.upsample(output)
         output = self.upsample_conv(output)
         return output
+    
+class Mask2Foremr(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        cfg=Config.fromfile('/opt/ml/level2_cv_semanticsegmentation-cv-01/baseline/mmconfig/mask2former.py')
+        ckp='https://download.openmmlab.com/mmsegmentation/v0.5/mask2former/mask2former_swin-l-in22k-384x384-pre_8xb2-160k_ade20k-640x640/mask2former_swin-l-in22k-384x384-pre_8xb2-160k_ade20k-640x640_20221203_235933-7120c214.pth'
+        self.model = init_model(cfg,ckp)
+    def forward(self,input):
+        output = self.model(input)
+        return output
+    
+if __name__=='__main__':
+    # model = Mask2Foremr()
+    model = MMSegFormerB5()
+    print(model)
+    # data=torch.zeros((1,3,1024,1024))
+    # print(model(data).shape)

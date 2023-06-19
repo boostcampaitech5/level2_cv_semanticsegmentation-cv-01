@@ -66,7 +66,7 @@ class CustomLoss(nn.Module):
         # bd = self.boundary_loss(pred,target) 
         bce = self.bce_loss(pred,target)
         # focal = self.focal_loss(pred,target)
-        loss = dice + bce
+        loss = 1.5*dice + bce
         # loss = dice + focal
         loss /= 2
         return loss

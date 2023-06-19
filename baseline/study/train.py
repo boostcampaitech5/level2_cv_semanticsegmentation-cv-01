@@ -78,6 +78,9 @@ def train(model, args, data_loader, val_loader, criterion, optimizer, order,epoc
             outputs = model(images)
             # loss 계산
             loss = criterion(outputs, masks)
+        # if epoch+1>=5:
+        #     if loss > 0.06:
+        #         print(loss,names)
         scaler.scale(loss).backward()
         if (step+1)%accum_step == 0 or step+1 == len(data_loader):
             # torch.nn.utils.clip_grad.clip_grad_norm(model.parameters(),2.0)
@@ -109,6 +112,11 @@ def run(model, args, data_loader, val_loader, criterion, optimizer,scheduler, or
             scheduler.step(epoch+1)
         if (epoch + 1) % args.val_every == 0:
             dice = validation(epoch + 1, model, args.classes, val_loader, criterion)
+            save_model(
+                    model,
+                    save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
+                    file_name=f"{args.model_name}_epoch{epoch}.pth",
+                )
             if best_dice < dice:
                 print(
                     f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}"

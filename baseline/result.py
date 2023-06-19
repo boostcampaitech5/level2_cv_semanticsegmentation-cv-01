@@ -35,7 +35,7 @@ def main(args, k=1):
     print(len(test_dataset))
     for i in range(k):
         model = torch.load(
-            os.path.join(args.pretrained_dir, f"mmSegformer_b5_false_labeling_remove_best0.pth")
+            os.path.join(args.pretrained_dir, f"mmSegformer_b5_false_labeling_remove_val1_best1.pth")
         )
         rles, filename_and_class = test(model, args.classes, test_loader)
         classes, filename = zip(*[x.split("_") for x in filename_and_class])

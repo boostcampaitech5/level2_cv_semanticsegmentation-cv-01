@@ -35,10 +35,10 @@ def main(args, k=1):
                     # A.RandomCrop(args.resize,args.resize),
                     # A.CoarseDropout(60,5,5,10),
                     A.ElasticTransform(alpha=50,sigma=10,alpha_affine=4,p=0.3),
-                    A.Normalize(mean=0.121,std=0.1641 ,max_pixel_value=1)
+                    # A.Normalize(mean=0.121,std=0.1641 ,max_pixel_value=1)
     ])
     val_tf = A.Compose([A.Resize(args.resize, args.resize),
-                    A.Normalize(mean=0.121,std=0.1641,max_pixel_value=1)
+                    # A.Normalize(mean=0.121,std=0.1641,max_pixel_value=1)
     ])
     for i in range(k):
         i=1
@@ -78,14 +78,15 @@ def main(args, k=1):
         )
         print(len(train_dataset),len(valid_dataset))
         model = MMSegFormerB5()
+        # model = Mask2Foremr()
         # env = model.model._env_variables
 
 
         #load_from 필요할 경우
-        backup = torch.load('/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b5_false_labeling_remove_best0.pth')
-        model.model.backbone = backup.model.backbone
-        model.model.decode_head = backup.model.decode_head
-        model.upsample_conv = backup.upsample_conv
+        # backup = torch.load('/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/mmSegformer_b5_false_labeling_remove_more1_best1.pth')
+        # model.model.backbone = backup.model.backbone
+        # model.model.decode_head = backup.model.decode_head
+        # model.upsample_conv = backup.upsample_conv
         
         
 
@@ -99,13 +100,20 @@ def main(args, k=1):
         # criterion = FocalLoss(gamma=2,alpha=alpha)
         # criterion = mmFocalLoss(alpha=alpha,loss_weight=3.0)
         # Optimizer 정의
-        optimizer = optim.AdamW([
+        optimizer = optim.AdamW(
+            [
             {'params':model.model.backbone.parameters(), 'lr':args.lr, 'weight_decay':args.weight_decay},
             {'params':model.model.decode_head.parameters(), 'lr':args.lr*10, 'weight_decay':args.weight_decay},
             {'params':model.upsample_conv.parameters(), 'lr':args.lr*10, 'weight_decay':args.weight_decay}
-        ])
-        # scheduler = optim.lr_scheduler.MultiStepLR(optimizer=optimizer,milestones=[60,70,90,110],gamma=0.3)
-        scheduler = None
+        ]
+        #     [
+        #     {'params':model.model.backbone.parameters(), 'lr':args.lr*0.1, 'weight_decay':args.weight_decay},
+        #     {'params':model.model.decode_head.parameters(), 'lr':args.lr, 'weight_decay':args.weight_decay*0.1},
+        # ]
+        )
+
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer=optimizer,milestones=[60,70,90,110],gamma=0.3)
+        # scheduler = None
         run(model, args, train_loader, valid_loader, criterion, optimizer,scheduler, i, accum_step=8)
 
 
@@ -165,13 +173,13 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="mmSegformer_b5_false_labeling_remove_more1",
+        default="MMSeg_b5_remove_normalize",
     )
-    parser.add_argument("--num_epoch", type=int, default=20)
+    parser.add_argument("--num_epoch", type=int, default=120)
     parser.add_argument("--resize", type=int, default=1024)
     parser.add_argument("--batch_size", type=int, default=2)
-    parser.add_argument("--lr", type=float, default=6e-6)
-    parser.add_argument("--weight_decay", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=6e-5)
+    parser.add_argument("--weight_decay", type=float, default=1e-2)
     parser.add_argument("--val_every", type=int, default=5)
 
     args = parser.parse_args()

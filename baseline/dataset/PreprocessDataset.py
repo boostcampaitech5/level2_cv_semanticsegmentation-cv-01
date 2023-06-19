@@ -19,7 +19,10 @@ def get_inner_files(path, extension):
 
 class PreProcessDataset(Dataset):
     def __init__(self, val_idx, image_path, classes, is_train=True, transforms=None):
-        remove_list = ['ID325/image1664846270124.npz','ID058/image1661392103627.npz','ID089/image1661821711879.npz']
+        remove_list = ['ID325/image1664846270124.npz','ID058/image1661392103627.npz','ID089/image1661821711879.npz',
+                      'ID469/image1666659964131.npz','ID363/image1664935962797.npz',
+    
+                       ]
         _filenames = np.load(os.path.join(image_path,'train.npy'))
         remove_idx = np.where(np.isin(_filenames,remove_list))
         _filenames = np.delete(_filenames,remove_idx)
@@ -67,7 +70,7 @@ class PreProcessDataset(Dataset):
         # image = torch.from_numpy(image).float()
         # label = torch.from_numpy(label).float()
 
-        return image,label
+        return image,label#,image_name
     
 if __name__ == '__main__':
     classes = [ "finger-1","finger-2","finger-3","finger-4","finger-5","finger-6","finger-7","finger-8",
