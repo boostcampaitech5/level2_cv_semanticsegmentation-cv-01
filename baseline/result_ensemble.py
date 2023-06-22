@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from torch.utils.data import DataLoader
 
 from dataset.XRayInferenceDataset import XRayInferenceDataset
-from study.inference import test
+from study.inference import *
 from utils import set_seed
 
 
@@ -34,14 +34,31 @@ def main(args):
     )
     test_loader = DataLoader(
         dataset=test_dataset,
-        batch_size=4,
+        batch_size=2,
         shuffle=False,
         num_workers=8,
         drop_last=False,
     )
 
-    model = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}.pth"))
-    rles, filename_and_class = test(model, args.classes, test_loader)
+    model1 = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}0.pth"))
+    model2 = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}1.pth"))
+    model3 = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}2.pth"))
+    model4 = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}3.pth"))
+    model5 = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}4.pth"))
+    model6 = torch.load(
+        "/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain/hrnet_48w_ocr_1024_augSet_full.pth"
+    )
+    rles, filename_and_class = ensemble_test(
+        model1,
+        model2,
+        model3,
+        model4,
+        model5,
+        model6,
+        args.classes,
+        test_loader,
+        args.thr,
+    )
     classes, filename = zip(*[x.split("_") for x in filename_and_class])
     image_name = [os.path.basename(f) for f in filename]
     df = pd.DataFrame(
@@ -126,6 +143,7 @@ def parse_args():
         default="fcn_res50_cosAnn_best",
     )
     parser.add_argument("--resize", type=int, default=256)
+    parser.add_argument("--thr", type=float, default=0.5)
 
     args = parser.parse_args()
     return args

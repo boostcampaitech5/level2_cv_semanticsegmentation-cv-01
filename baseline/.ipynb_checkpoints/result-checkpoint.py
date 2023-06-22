@@ -11,7 +11,7 @@ from study.inference import test
 from utils import set_seed
 
 
-def main(args):
+def main(args, k=1):
     seed = 21
     set_seed(seed)
 
@@ -20,11 +20,11 @@ def main(args):
     tf = A.Compose(
         [
             A.Resize(args.resize, args.resize),
-            A.Normalize(
-                mean=(0.121, 0.121, 0.121),
-                std=(0.1641, 0.1641, 0.1641),
-                max_pixel_value=1,
-            ),
+            # A.Normalize(
+            #     mean=(0.121, 0.121, 0.121),
+            #     std=(0.1641, 0.1641, 0.1641),
+            #     max_pixel_value=1,
+            # ),
         ]
     )
 
@@ -34,32 +34,35 @@ def main(args):
     )
     test_loader = DataLoader(
         dataset=test_dataset,
-        batch_size=4,
+        batch_size=2,
         shuffle=False,
-        num_workers=8,
+        num_workers=2,
         drop_last=False,
     )
 
-    model = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}.pth"))
-    rles, filename_and_class = test(model, args.classes, test_loader)
-    classes, filename = zip(*[x.split("_") for x in filename_and_class])
-    image_name = [os.path.basename(f) for f in filename]
-    df = pd.DataFrame(
-        {
-            "image_name": image_name,
-            "class": classes,
-            "rle": rles,
-        }
-    )
-    df.to_csv(os.path.join(args.saved_dir, f"{args.output}.csv"), index=False)
-    full_df = pd.DataFrame(
-        {
-            "image_name": filename,
-            "class": classes,
-            "rle": rles,
-        }
-    )
-    full_df.to_csv(os.path.join(args.saved_dir, f"{args.output}_full.csv"), index=False)
+    for i in range(k):
+        model = torch.load(os.path.join(args.pretrained_dir, f"{args.pretrain}{i}.pth"))
+        rles, filename_and_class = test(model, args.classes, test_loader)
+        classes, filename = zip(*[x.split("_") for x in filename_and_class])
+        image_name = [os.path.basename(f) for f in filename]
+        df = pd.DataFrame(
+            {
+                "image_name": image_name,
+                "class": classes,
+                "rle": rles,
+            }
+        )
+        df.to_csv(os.path.join(args.saved_dir, f"{args.output}{i}.csv"), index=False)
+        full_df = pd.DataFrame(
+            {
+                "image_name": filename,
+                "class": classes,
+                "rle": rles,
+            }
+        )
+        full_df.to_csv(
+            os.path.join(args.saved_dir, f"{args.output}{i}_full.csv"), index=False
+        )
 
 
 def parse_args():

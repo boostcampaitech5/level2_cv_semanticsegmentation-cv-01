@@ -20,11 +20,7 @@ def validation(epoch, model, classes, data_loader, criterion, thr=0.5):
         for step, (images, masks) in tqdm(
             enumerate(data_loader), total=len(data_loader)
         ):
-            # images, masks = images.cuda(), masks.cuda()
-            images, masks = (
-                torch.from_numpy(images).cuda(),
-                torch.from_numpy(masks).cuda(),
-            )
+            images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
 
             # outputs = model(images)["out"]
@@ -74,12 +70,9 @@ def train(
         model.train()
 
         for step, (images, masks) in enumerate(data_loader):
-            # images, masks = images.cuda(), masks.cuda()
-            images, masks = (
-                torch.from_numpy(images).cuda(),
-                torch.from_numpy(masks).cuda(),
-            )
+            images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
+            optimizer.zero_grad()
 
             with torch.cuda.amp.autocast(enabled=True):
                 # inference
@@ -95,11 +88,8 @@ def train(
                 loss = criterion(outputs, masks)
 
             scaler.scale(loss).backward()
-
-            if (step + 1) % args.accumulation_steps == 0:
-                scaler.step(optimizer)
-                scaler.update()
-                optimizer.zero_grad()
+            scaler.step(optimizer)
+            scaler.update()
 
             current_lr = optimizer.param_groups[0]["lr"]
             wandb.log({"train/LR": current_lr, "train/loss": loss})
@@ -111,10 +101,6 @@ def train(
                     f"Step [{step+1}/{len(data_loader)}], "
                     f"Loss: {round(loss.item(),4)}"
                 )
-        if args.accumulation_steps > 1 and (step + 1) % args.accumulation_steps != 0:
-            scaler.step(optimizer)
-            scaler.update()
-            optimizer.zero_grad()
 
         if (epoch + 1) % args.val_every == 0:
             dice = validation(epoch + 1, model, args.classes, val_loader, criterion)
@@ -130,69 +116,5 @@ def train(
                     save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
                     file_name=f"{args.model_name}_best{order}.pth",
                 )
-            save_model(
-                model,
-                save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
-                file_name=f"{args.model_name}_latest{order}.pth",
-            )
         if scheduler != None:
             scheduler.step()
-
-
-def full_train(model, args, data_loader, criterion, optimizer, scheduler=None):
-    print(f"Start training..")
-
-    scaler = torch.cuda.amp.GradScaler(enabled=True)
-
-    for epoch in range(args.num_epoch):
-        model.train()
-
-        for step, (images, masks) in enumerate(data_loader):
-            # images, masks = images.cuda(), masks.cuda()
-            images, masks = (
-                torch.from_numpy(images).cuda(),
-                torch.from_numpy(masks).cuda(),
-            )
-            model = model.cuda()
-
-            with torch.cuda.amp.autocast(enabled=True):
-                # inference
-                # outputs = model(images)["out"]
-                outputs = model(images)
-                output_h, output_w = outputs.size(-2), outputs.size(-1)
-                mask_h, mask_w = masks.size(-2), masks.size(-1)
-
-                if output_h != mask_h or output_w != mask_w:
-                    outputs = F.interpolate(
-                        outputs, size=(mask_h, mask_w), mode="bilinear"
-                    )
-                loss = criterion(outputs, masks)
-
-            scaler.scale(loss).backward()
-
-            if (step + 1) % args.accumulation_steps == 0:
-                scaler.step(optimizer)
-                scaler.update()
-                optimizer.zero_grad()
-
-            current_lr = optimizer.param_groups[0]["lr"]
-            wandb.log({"train/LR": current_lr, "train/loss": loss})
-
-            if (step + 1) % 20 == 0:
-                print(
-                    f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | '
-                    f"Epoch [{epoch+1}/{args.num_epoch}], "
-                    f"Step [{step+1}/{len(data_loader)}], "
-                    f"Loss: {round(loss.item(),4)}"
-                )
-        if args.accumulation_steps > 1 and (step + 1) % args.accumulation_steps != 0:
-            scaler.step(optimizer)
-            scaler.update()
-            optimizer.zero_grad()
-        if scheduler != None:
-            scheduler.step()
-    save_model(
-        model,
-        save_path="/opt/ml/level2_cv_semanticsegmentation-cv-01/pretrain",
-        file_name=f"{args.model_name}_full.pth",
-    )

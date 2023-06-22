@@ -12,11 +12,11 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from loss.loss import DiceBCE
 from models import *
 from hrnet.hrnet_48w_ocr import hrnet_48w_ocr
-from study.train import train
+from study.train import *
 from utils import *
 
 
-def main(args, k=1):
+def main(args):
     torch.cuda.empty_cache()
 
     seed = 21
@@ -37,71 +37,41 @@ def main(args, k=1):
             ),
         ]
     )
-    val_tf = A.Compose(
-        [
-            A.Resize(args.resize, args.resize),
-            A.Normalize(
-                mean=(0.121, 0.121, 0.121),
-                std=(0.1641, 0.1641, 0.1641),
-                max_pixel_value=1,
-            ),
-        ]
+    train_dataset = XRayTrainDataset(
+        val_idx=-1,
+        image_path=args.image_path,
+        label_path=args.label_path,
+        classes=args.classes,
+        is_train=True,
+        transforms=tf,
     )
-    for i in range(k):
-        train_dataset = XRayTrainDataset(
-            val_idx=i,
-            image_path=args.image_path,
-            label_path=args.label_path,
-            classes=args.classes,
-            is_train=True,
-            transforms=tf,
-        )
-        valid_dataset = XRayTrainDataset(
-            val_idx=i,
-            image_path=args.image_path,
-            label_path=args.label_path,
-            classes=args.classes,
-            is_train=False,
-            transforms=val_tf,
-        )
+    train_loader = DataLoader(
+        dataset=train_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=2,
+        collate_fn=custom_collate_fn,
+        drop_last=False,
+    )
 
-        train_loader = DataLoader(
-            dataset=train_dataset,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=2,
-            collate_fn=custom_collate_fn,
-            drop_last=False,
-        )
-        valid_loader = DataLoader(
-            dataset=valid_dataset,
-            batch_size=2,
-            shuffle=False,
-            num_workers=4,
-            collate_fn=custom_collate_fn,
-            drop_last=False,
-        )
+    model = hrnet_48w_ocr()
 
-        model = hrnet_48w_ocr()
+    # Loss function 정의
+    criterion = DiceBCE()
 
-        # Loss function 정의
-        criterion = DiceBCE()
-
-        # Optimizer 정의
-        optimizer = optim.AdamW(
-            params=model.parameters(), lr=args.lr, weight_decay=args.weight_decay
-        )
-        scheduler = CosineAnnealingLR(optimizer, T_max=args.num_epoch, eta_min=1e-4)
-        train(
-            model,
-            args,
-            train_loader,
-            valid_loader,
-            criterion,
-            optimizer,
-            i,
-            scheduler=scheduler,
-        )
+    # Optimizer 정의
+    optimizer = optim.AdamW(
+        params=model.parameters(), lr=args.lr, weight_decay=args.weight_decay
+    )
+    scheduler = CosineAnnealingLR(optimizer, T_max=args.num_epoch, eta_min=1e-4)
+    full_train(
+        model,
+        args,
+        train_loader,
+        criterion,
+        optimizer,
+        scheduler=scheduler,
+    )
 
 
 def parse_args():

@@ -9,11 +9,12 @@ from torch.utils.data import DataLoader
 
 from dataset.XRayTrainDataset import XRayTrainDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from scheduler.CosinePowerAnnealing import CosinePowerAnnealing
 from loss.loss import DiceBCE
 from models import *
 from hrnet.hrnet_48w_ocr import hrnet_48w_ocr
 from study.train import train
-from utils import *
+from utils import set_seed
 
 
 def main(args, k=1):
@@ -29,22 +30,22 @@ def main(args, k=1):
         [
             A.Resize(args.resize, args.resize),
             A.HorizontalFlip(p=0.5),
-            A.ElasticTransform(alpha=50, sigma=10, alpha_affine=4, p=0.2),
-            A.Normalize(
-                mean=(0.121, 0.121, 0.121),
-                std=(0.1641, 0.1641, 0.1641),
-                max_pixel_value=1,
-            ),
+            # A.ElasticTransform(alpha=50, sigma=10, alpha_affine=4, p=0.2),
+            # A.Normalize(
+            #     mean=(0.121, 0.121, 0.121),
+            #     std=(0.1641, 0.1641, 0.1641),
+            #     max_pixel_value=1,
+            # ),
         ]
     )
     val_tf = A.Compose(
         [
             A.Resize(args.resize, args.resize),
-            A.Normalize(
-                mean=(0.121, 0.121, 0.121),
-                std=(0.1641, 0.1641, 0.1641),
-                max_pixel_value=1,
-            ),
+            # A.Normalize(
+            #     mean=(0.121, 0.121, 0.121),
+            #     std=(0.1641, 0.1641, 0.1641),
+            #     max_pixel_value=1,
+            # ),
         ]
     )
     for i in range(k):
@@ -70,15 +71,13 @@ def main(args, k=1):
             batch_size=args.batch_size,
             shuffle=True,
             num_workers=2,
-            collate_fn=custom_collate_fn,
-            drop_last=False,
+            drop_last=True,
         )
         valid_loader = DataLoader(
             dataset=valid_dataset,
             batch_size=2,
             shuffle=False,
-            num_workers=4,
-            collate_fn=custom_collate_fn,
+            num_workers=0,
             drop_last=False,
         )
 
@@ -91,7 +90,14 @@ def main(args, k=1):
         optimizer = optim.AdamW(
             params=model.parameters(), lr=args.lr, weight_decay=args.weight_decay
         )
+        # scheduler = CosinePowerAnnealing(
+        #     optimizer=optimizer,
+        #     epochs=args.num_epoch,
+        #     max_lr=10,
+        #     min_lr=0.5,
+        # )
         scheduler = CosineAnnealingLR(optimizer, T_max=args.num_epoch, eta_min=1e-4)
+        # scheduler = CosineAnnealingLR(optimizer, T_max=20, eta_min=5e-4)
         train(
             model,
             args,
@@ -168,7 +174,6 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--val_every", type=int, default=1)
-    parser.add_argument("--accumulation_steps", type=int, default=4)
 
     args = parser.parse_args()
     return args

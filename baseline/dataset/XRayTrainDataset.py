@@ -3,6 +3,7 @@ import os
 import cv2
 import torch
 import numpy as np
+import albumentations as A
 
 from torch.utils.data import Dataset
 from sklearn.model_selection import GroupKFold
@@ -69,8 +70,8 @@ class XRayTrainDataset(Dataset):
         image_name = self.filenames[item]
         image_path = os.path.join(self.image_path, image_name)
 
-        image = cv2.imread(image_path)
-        image = image / 255.0
+        original_image = cv2.imread(image_path)
+        image = original_image / 255.0
 
         label_name = self.labelnames[item]
         label_path = os.path.join(self.label_path, label_name)
@@ -108,7 +109,7 @@ class XRayTrainDataset(Dataset):
         image = image.transpose(2, 0, 1)  # make channel first
         label = label.transpose(2, 0, 1)
 
-        image = torch.from_numpy(image).float()
-        label = torch.from_numpy(label).float()
+        # image = torch.from_numpy(image).float()
+        # label = torch.from_numpy(label).float()
 
         return image, label

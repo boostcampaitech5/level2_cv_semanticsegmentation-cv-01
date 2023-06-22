@@ -56,9 +56,9 @@ def crf(W, H, mask_img):
 
     # This adds the color-independent term, features are the locations only.
     d.addPairwiseGaussian(
-        sxy=(4, 3),
+        sxy=(7, 3),
         compat=3,
-        kernel=dcrf.FULL_KERNEL,
+        kernel=dcrf.DIAG_KERNEL,
         normalization=dcrf.NORMALIZE_SYMMETRIC,
     )
 
@@ -69,10 +69,3 @@ def crf(W, H, mask_img):
     MAP = np.argmax(Q, axis=0)
 
     return MAP.reshape((W, H))
-
-
-def custom_collate_fn(sample):
-    img, label = list(zip(*sample))
-    img = np.array(img, dtype=np.float32)
-    label = np.array(label, dtype=np.float32)
-    return img, label
